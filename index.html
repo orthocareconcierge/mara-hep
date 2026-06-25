@@ -724,9 +724,10 @@ function toggleCheck(section, idx) {
   document.getElementById('check-' + section + '-' + idx)?.classList.toggle('done', done);
   document.getElementById('card-' + section + '-' + idx)?.classList.toggle('done-card', done);
   updateProgress(section);
-  saveAll();
   if (section === 'daily') checkDailyComplete();
   if (section === 'pool') maybeOfferReset();
+  syncTodayHistory();
+  saveAll();
 }
 function addSet(section, idx) {
   const k = exKey(section, idx);
@@ -747,7 +748,7 @@ function saveExNotes(section, idx, val) { hepLog[notesKey(section, idx)] = val; 
 function saveSessionNotes() {
   const date = todayKey();
   hepLog['s-' + date + '-notes'] = document.getElementById('session-notes').value;
-  if (completedDays.includes(date)) upsertTodayHistory();
+  syncTodayHistory();
   saveAll();
 }
 
@@ -793,6 +794,20 @@ function upsertTodayHistory() {
     round: poolRound,
     notes: hepLog['s-' + date + '-notes'] || ''
   });
+}
+
+function syncTodayHistory() {
+  const date = todayKey();
+  history = history.filter(h => h.date !== date);
+  if (doneCount('daily') > 0 || doneCount('pool') > 0) {
+    history.push({
+      date: date,
+      dailyDone: doneCount('daily'), dailyTotal: dailyExercises.length,
+      poolDone: doneCount('pool'), poolTotal: poolExercises.length,
+      round: poolRound,
+      notes: hepLog['s-' + date + '-notes'] || ''
+    });
+  }
 }
 
 // ---------- ROTATION RESET ----------
